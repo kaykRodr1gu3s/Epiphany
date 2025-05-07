@@ -1,0 +1,19 @@
+[project]
+name = "epiphany"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "kaykRodr1gu3s",email = "110197812+kaykRodr1gu3s@users.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "splunk-sdk (==2.1.0)",
+    "python-dotenv (>=1.1.0,<2.0.0)",
+    "elasticsearch (==8.11.1)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
