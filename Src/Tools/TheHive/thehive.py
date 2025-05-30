@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from thehive4py.api import TheHiveApi
 from thehive4py.models import Alert, AlertArtifact
-
+from Tools.Elastic.elastic import Elasticsearch_up
 def setup_logging():
     project_root = Path(__file__).parent.parent
     sys.path.append(str(project_root))
@@ -58,23 +58,14 @@ class Thehive:
                 time.sleep(self.retry_delay)
 
     def create_alert_function(self, elastic_datas: Dict[str, Any]) -> None:
-        """
-        Create an alert in TheHive based on event data pulled from Splunk.
 
-        Args:
-            splunk_datas (dict): Dictionary containing keys like EventCode, host, _time, and SourceName.
-            
-        Raises:
-        Exception: If there's an error creating the alert in TheHive
-        """
+        elastic_update = Elasticsearch_up()
         try:
             if not elastic_datas:
                 logger.warning("No data provided to create alert")
                 return
             
             for data in elastic_datas:
-                print(data)
-                print()
                 alert = Alert(
                     title=f"Ip source {data.get('_source')['src_ip']}",
                     type="external",
@@ -91,6 +82,9 @@ class Thehive:
                 response = self.client.create_alert(alert)
                 logger.info(f"Alert creation response: {response}")
                 logger.info(f"Successfully created alert")
+                elastic_update.updater(id=data.get("_id"))
+
+
 
         except Exception as e:
             logger.error(f"Error creating alert in TheHive: {str(e)}")
