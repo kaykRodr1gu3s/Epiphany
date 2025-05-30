@@ -82,3 +82,7 @@ class Elasticsearch_up:
             all_hits.extend(hits)
         logger.info("All datas from elasticsearch was colected")
         return all_hits
+    
+    def updater(self, id):
+        self.client.update(index="main",id=id,
+                           doc={"verified":True})
