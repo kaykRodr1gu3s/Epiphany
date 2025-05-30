@@ -43,7 +43,7 @@ class Splunk_up:
         with open("eve.json", 'r') as files:
             for file in files:
                 try:
-                    indexes = self.cliente.indexes["suricata_rules"]
+                    indexes = self.client.indexes["suricata_rules"]
                     event_data = json.loads(file)
                     event_str = json.dumps(event_data)
                     indexes.submit(event_str, sourcetype="suricata_json")
