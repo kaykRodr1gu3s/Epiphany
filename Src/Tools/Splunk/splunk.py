@@ -6,8 +6,9 @@ from logging.handlers import RotatingFileHandler
 import logging
 from pathlib import Path
 import sys
-
 import splunklib.client
+
+
 
 def setup_logging():
     project_root = Path(__file__).parent.parent
@@ -20,12 +21,13 @@ def setup_logging():
     backupCount=3
 )
     file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    logger = logging.getLogger("suricata-alert-uploader")
+    logger = logging.getLogger("splunk-logger")
     logger.setLevel(logging.INFO)
     logger.addHandler(file_handler)
     logger.addHandler(logging.StreamHandler())
     
     return logger
+
 logger = setup_logging()
 
 class Splunk_up:
@@ -39,12 +41,15 @@ class Splunk_up:
             logger.info("Error to connect in Splunk")
             raise
 
-    def splunk_upload(self):
+    @property
+    def suricata_alerts_upload(self):
         with open("eve.json", 'r') as files:
             for file in files:
+                
                 try:
-                    indexes = self.client.indexes["suricata_rules"]
+                    indexes = self.client.indexes["kokinha"]
                     event_data = json.loads(file)
+                    event_data["verified"] = False
                     event_str = json.dumps(event_data)
                     indexes.submit(event_str, sourcetype="suricata_json")
                 except Exception:
@@ -52,6 +57,8 @@ class Splunk_up:
                     raise
             logger.info("JSON uploaded to Splunk")
 
+    
+    @property
     def searcher(self):
 
         try:
@@ -68,7 +75,8 @@ class Splunk_up:
         except Exception:
             raise logger.error("Error to create job in the splunk")
 
+
     def _query(self) -> str:
         return """search 
-        index=suricata_rules event_type=alert
+        index=suricata_rules event_type="alert"
         """
