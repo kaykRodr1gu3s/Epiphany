@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 def setup_logging():
     project_root = Path(__file__).parent.parent
     sys.path.append(str(project_root))
-    log_path = project_root / "logs" / "elasticsearch.log"
+    log_path = project_root / "logs" / "elastic-logger.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     file_handler = RotatingFileHandler(
     log_path,
@@ -37,29 +37,51 @@ class Elasticsearch_up:
             raise logger.critical("Error to connect in the elasticsearch")
 
     def upload(self, datas):
-        if datas:
+        if type(datas) == list:
             for data in datas:
                 try:
                     docs = data.get("_raw")
                     docs = json.loads(docs)
-            
                     doc = {"timestamp" : docs.get("timestamp"),
                         "event_type": docs.get("event_type"),
                         "src_ip" :  docs.get("src_ip"),
                         "src_port": docs.get("src_port"),
                         "dest_ip": docs.get("dest_ip"),
-                        "metadata": docs.get("alert").get("category"),
+                        "flow_id": int(docs.get("flow_id")),
                         "verified": False
                         }
-                    self.client.index(index="main", document=doc)
+                    self.client.index(index="suricata-datas", document=doc)
                     logger.info("Data is being uploaded to elasticsearch")
                 except Exception:
                     raise logger.critical("Erro to parse the data to collect from the tools")
+        else:
+            try:
+
+                doc = {"timestamp" : datas.get("timestamp"),
+                    "event_type": datas.get("event_type"),
+                    "src_ip" :  datas.get("src_ip"),
+                    "src_port": datas.get("src_port"),
+                    "dest_ip": datas.get("dest_ip"),
+                    "flow_id": int(datas.get("flow_id")),
+                    "verified": False
+                    }
+                self.client.index(index="suricata-datas", document=doc)
+                logger.info("Data is being uploaded to elasticsearch")
+            except Exception:
+                raise logger.critical("Erro to parse the data to collect from the tools")
+                
+    def id_identifier(self, flow_id):
+        try:
+            datas = self.client.search(index="suricata-datas",body={"size": 1,"query": {"term": {"flow_id": flow_id}}})
+            datas["hits"].get("hits")[0].get("_source").get("flow_id") == flow_id
+            return True
+        except:
+            return False
 
     @property
     def searcher(self):
         response = self.client.search(
-        index="main",
+        index="suricata-datas",
         scroll="2m",
         size=100,
         query={
