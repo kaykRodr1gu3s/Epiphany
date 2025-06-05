@@ -11,7 +11,11 @@ import splunklib.client
 
 
 def setup_logging():
-    project_root = Path(__file__).parent.parent
+    """
+    This function is used to create logs. 
+
+    """
+    project_root = Path(__file__).parent.parent.parent
     sys.path.append(str(project_root))
     log_path = project_root / "logs" / "splunk_uploader.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -31,6 +35,9 @@ def setup_logging():
 logger = setup_logging()
 
 class Splunk_up:
+    """
+    This class connect in a client and upload and search data in the splunk
+    """
     def __init__(self):
         load_dotenv()
         try:
@@ -43,11 +50,14 @@ class Splunk_up:
 
     @property
     def suricata_alerts_upload(self):
+        """
+        This function open a .json file and upload to splunk in the suricata_datas index
+        """
         with open("eve.json", 'r') as files:
             for file in files:
                 
                 try:
-                    indexes = self.client.indexes["kokinha"]
+                    indexes = self.client.indexes["suricata_datas"]
                     event_data = json.loads(file)
                     event_data["verified"] = False
                     event_str = json.dumps(event_data)
@@ -60,12 +70,13 @@ class Splunk_up:
     
     @property
     def searcher(self):
-
+        """
+        This function search in splunk , the query is the _query()
+        """
         try:
             job = self.client.jobs.create(self._query())
             resultado = job.results(output_mode='json')
             data = json.loads(resultado.read().decode("utf-8"))
-
             if data["results"]:
                 logger.info("Data has been collect from splunk successfully")
                 return data["results"]
@@ -77,6 +88,9 @@ class Splunk_up:
 
 
     def _query(self) -> str:
+        """
+        This is a query to splunk.
+        """
         return """search 
-        index=suricata_rules event_type="alert"
+        index=suricata_datas event_type="alert"
         """
