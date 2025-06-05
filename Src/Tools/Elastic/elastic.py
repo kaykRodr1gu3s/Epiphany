@@ -9,7 +9,10 @@ from dotenv import load_dotenv
 
 
 def setup_logging():
-    project_root = Path(__file__).parent.parent
+    """
+    This function is used to create logs. 
+    """
+    project_root = Path(__file__).paretn.parent.parent
     sys.path.append(str(project_root))
     log_path = project_root / "logs" / "elastic-logger.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -29,6 +32,9 @@ logger = setup_logging()
 
 class Elasticsearch_up:
     def __init__(self):
+        """
+        This class upload, update, search and identifier the datas in elasticsearch. With this class, the project don't work, it is the centralizer.
+        """
         load_dotenv()
         try:
             self.client = Elasticsearch(hosts=os.getenv("elastic_endpoint"), api_key=os.getenv("elasticsearch_apikey"))
@@ -36,8 +42,16 @@ class Elasticsearch_up:
         except Exception:
             raise logger.critical("Error to connect in the elasticsearch")
 
-    def upload(self, datas):
+    def upload(self, datas: dict) -> None:
+        """
+        This class upload the datas in elasticsearch.
+
+        Datas >>> dict
+        """
         if type(datas) == list:
+            """
+            If the -upload argument is passed, all the eve.json will be uploaded, and this if statament will be initialized.
+            """
             for data in datas:
                 try:
                     docs = data.get("_raw")
@@ -55,6 +69,10 @@ class Elasticsearch_up:
                 except Exception:
                     raise logger.critical("Erro to parse the data to collect from the tools")
         else:
+            """
+            If the -upload argument isn't passed as argument, will be identifier that the eve.json isn't being uploaded and will be utilezid the id_identifier function to verify the alert are in the elasticsearch.
+            This 
+            """
             try:
 
                 doc = {"timestamp" : datas.get("timestamp"),
@@ -70,7 +88,10 @@ class Elasticsearch_up:
             except Exception:
                 raise logger.critical("Erro to parse the data to collect from the tools")
                 
-    def id_identifier(self, flow_id):
+    def id_identifier(self, flow_id) -> bool:
+        """
+        This function is used to verify if the alert are in the elasticsearch. If the alert are, will be returned True, else will be returned False 
+        """
         try:
             datas = self.client.search(index="suricata-datas",body={"size": 1,"query": {"term": {"flow_id": flow_id}}})
             datas["hits"].get("hits")[0].get("_source").get("flow_id") == flow_id
@@ -79,32 +100,33 @@ class Elasticsearch_up:
             return False
 
     @property
-    def searcher(self):
+    def searcher(self) -> dict:
+        """
+        This function is used to search a query KQL in elasticsearch.
+        """
         response = self.client.search(
-        index="suricata-datas",
-        scroll="2m",
-        size=100,
-        query={
-            "match_all": {}
-        }
+            index="suricata-datas",
+            scroll="2m",
+            size=100,
+            query={
+                "term": {
+                    "verified": False
+                }
+            }
         )
 
         if "_scroll_id" not in response:
             logger.critical("No data returned from the elasticsearch")
             return
 
-        scroll_id = response["_scroll_id"]
-        all_hits = response["hits"]["hits"]
+        all_hits_dict = {}
+        for hit in response["hits"]["hits"]:
+            all_hits_dict[hit["_id"]] = hit
 
-        while True:
-            scroll_response = self.client.scroll(scroll_id=scroll_id, scroll="2m")
-            hits = scroll_response["hits"]["hits"]
-            if not hits:
-                break
-            all_hits.extend(hits)
-        logger.info("All datas from elasticsearch was colected")
-        return all_hits
+        return all_hits_dict
     
-    def updater(self, id):
-        self.client.update(index="main",id=id,
-                           doc={"verified":True})
+    def updater(self, id : str) -> None:
+        """
+        This function is used to update the verified field in elasticsearch, with this function, the field will be transformed in True 
+        """
+        self.client.update(index="suricata-datas",id=id,body={"doc": {"verified": True}})
