@@ -4,14 +4,20 @@ import logging
 import os
 import time
 import uuid
+import json
 from typing import Dict, Any 
 from dotenv import load_dotenv
 from pathlib import Path
 from thehive4py.api import TheHiveApi
 from thehive4py.models import Alert, AlertArtifact
 from Tools.Elastic.elastic import Elasticsearch_up
+
+
 def setup_logging():
-    project_root = Path(__file__).parent.parent
+    """
+    This function is used to create logs. 
+    """
+    project_root = Path(__file__).parent.parent.parent
     sys.path.append(str(project_root))
     log_path = project_root / "logs" / "TheHive.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -30,7 +36,9 @@ def setup_logging():
 logger = setup_logging()
 
 class Thehive:
-
+    """
+    This class create a connection and create alert in the Thehive 
+    """
     def __init__(self, max_retries: int = 3, retry_delay: int = 5):
         load_dotenv()
         self.max_retries = max_retries
@@ -40,7 +48,11 @@ class Thehive:
         self.client = self.thehive_conector
         
     @property
-    def thehive_conector(self):
+    def thehive_conector(self) -> None:
+        """
+        This function create a client in Thehive
+        """
+
         if not self.api or not self.endpoint:
             raise ValueError("TheHive API key or endpoint not found in environment variables")
             
@@ -58,34 +70,39 @@ class Thehive:
                 time.sleep(self.retry_delay)
 
     def create_alert_function(self, elastic_datas: Dict[str, Any]) -> None:
+        """
+        This function create alerts in Thehive.
 
+        elastic_datas >>> Dict
+        """
         elastic_update = Elasticsearch_up()
         try:
             if not elastic_datas:
                 logger.warning("No data provided to create alert")
                 return
-            
-            for data in elastic_datas:
+            for elastic_id in elastic_datas:
+                datas = elastic_datas[elastic_id]
+                datas = json.loads(datas)
                 alert = Alert(
-                    title=f"Ip source {data.get('_source')['src_ip']}",
+                    title=f"Ip source {datas["_source"]['src_ip']}",
                     type="external",
                     source="Suricata",
-                    description=f"The event_type is: {data.get('_source')['event_type']}",
-                    sourceRef=f"suricata alert: uuid: {uuid.uuid4()}",
+                    description=f"The event_type is: {datas["_source"]["event_type"]}",
+                    sourceRef=elastic_id,
                     artifacts=[
-                        AlertArtifact(dataType="host", data=data.get('_source')['src_ip']),
-                        AlertArtifact(dataType="datetime", data=data.get('_source')['timestamp']),
+                        AlertArtifact(dataType="host", data=datas["_source"]["src_ip"]),
+                        AlertArtifact(dataType="datetime", data=datas["_source"]["timestamp"]),
                         AlertArtifact(dataType="SourceName", data="Suricata"),
-                        AlertArtifact(dataType="Destination", data=data.get('_source')['dest_ip'])
+                        AlertArtifact(dataType="Destination", data=datas["_source"]["dest_ip"])
                     ]
                 )
                 response = self.client.create_alert(alert)
                 logger.info(f"Alert creation response: {response}")
                 logger.info(f"Successfully created alert")
-                elastic_update.updater(id=data.get("_id"))
+                elastic_update.updater(id=elastic_id)
 
 
 
         except Exception as e:
             logger.error(f"Error creating alert in TheHive: {str(e)}")
-            raise 
+            pass
