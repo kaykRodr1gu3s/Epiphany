@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import os
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -163,5 +164,6 @@ def main() -> None:
         logger.error(f"Application failed: {e}")
         raise
 
-if __name__ == "__main__":
+if __name__ == "__maaain__":
     main()
+    os.remove("eve.json")
