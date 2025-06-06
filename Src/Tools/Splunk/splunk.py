@@ -28,7 +28,6 @@ def setup_logging():
     logger = logging.getLogger("splunk-logger")
     logger.setLevel(logging.INFO)
     logger.addHandler(file_handler)
-    logger.addHandler(logging.StreamHandler())
     
     return logger
 
@@ -55,15 +54,14 @@ class Splunk_up:
         """
         with open("eve.json", 'r') as files:
             for file in files:
-                
                 try:
-                    indexes = self.client.indexes["suricata_datas"]
+                    indexes = self.client.indexes["suricata-datas"]
                     event_data = json.loads(file)
                     event_data["verified"] = False
                     event_str = json.dumps(event_data)
                     indexes.submit(event_str, sourcetype="suricata_json")
                 except Exception:
-                    logger.error(f"Failed to upload JSON to splunk - timestamp alert {files.get("timestamp")}")
+                    logger.error(f"Failed to upload JSON to splunk - timestamp alert {file.get("timestamp")}")
                     raise
             logger.info("JSON uploaded to Splunk")
 
@@ -92,5 +90,5 @@ class Splunk_up:
         This is a query to splunk.
         """
         return """search 
-        index=suricata_datas event_type="alert"
+        index=suricata_rules
         """
