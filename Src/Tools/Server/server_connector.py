@@ -17,6 +17,6 @@ class Server:
         """
         This function execute a suricata command suricata -r <pcap file>. After to execute the suricata command, the eve.json file will be downloaded.
         """
-        self.client.exec_command(f"suricata -r pcap_datas/2024-09-19-file-downloader-to-Lumma-Stealer.pcap")
+        self.client.exec_command(f"suricata -r {os.getenv("pcap_file")}")
         sftp = self.client.open_sftp()
         sftp.get(f"{os.getenv("remote_path")}/eve.json",f"{os.getcwd()}/eve.json")
