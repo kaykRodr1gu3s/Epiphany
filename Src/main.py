@@ -164,6 +164,6 @@ def main() -> None:
         logger.error(f"Application failed: {e}")
         raise
 
-if __name__ == "__maaain__":
+if __name__ == "__main__":
     main()
     os.remove("eve.json")
