@@ -12,20 +12,24 @@ def setup_logging():
     """
     This function is used to create logs. 
     """
-    project_root = Path(__file__).paretn.parent.parent
+    project_root = Path(__file__).parent.parent.parent
     sys.path.append(str(project_root))
     log_path = project_root / "logs" / "elastic-logger.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     file_handler = RotatingFileHandler(
-    log_path,
-    maxBytes=5*1024*1024,
-    backupCount=3
-)
+        log_path,
+        maxBytes=5*1024*1024,
+        backupCount=3
+    )
     file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    
+    # Set up main logger
     logger = logging.getLogger("suricata-alert-uploader")
     logger.setLevel(logging.INFO)
     logger.addHandler(file_handler)
-    logger.addHandler(logging.StreamHandler())
+    
+    # Set Elasticsearch client logging to WARNING to reduce noise
+    logging.getLogger('elasticsearch').setLevel(logging.WARNING)
     
     return logger
 logger = setup_logging()
