@@ -3,9 +3,6 @@ from logging.handlers import RotatingFileHandler
 import logging
 import os
 import time
-import uuid
-import json
-from typing import Dict, Any 
 from dotenv import load_dotenv
 from pathlib import Path
 from thehive4py.api import TheHiveApi
@@ -30,7 +27,6 @@ def setup_logging():
     logger = logging.getLogger("TheHive.log")
     logger.setLevel(logging.INFO)
     logger.addHandler(file_handler)
-    logger.addHandler(logging.StreamHandler())
     
     return logger
 logger = setup_logging()
@@ -69,7 +65,7 @@ class Thehive:
                 logger.warning(f"Connection attempt {attempt + 1} failed, retrying in {self.retry_delay} seconds...")
                 time.sleep(self.retry_delay)
 
-    def create_alert_function(self, elastic_datas: Dict[str, Any]) -> None:
+    def create_alert_function(self, elastic_datas) -> None:
         """
         This function create alerts in Thehive.
 
@@ -81,8 +77,8 @@ class Thehive:
                 logger.warning("No data provided to create alert")
                 return
             for elastic_id in elastic_datas:
+
                 datas = elastic_datas[elastic_id]
-                datas = json.loads(datas)
                 alert = Alert(
                     title=f"Ip source {datas["_source"]['src_ip']}",
                     type="external",
