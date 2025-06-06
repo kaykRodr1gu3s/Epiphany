@@ -15,7 +15,7 @@
 + [Setup Instructions](#setup-instructions)
 + [Installations guide](#installations-guide)
 + [Command-Line Usage](#command-line-usage)
-+ [uture Improvements](#future-improvements)
++ [Future Improvements](#future-improvements)
 + [Contribution](#contribution)
 
 -------  
